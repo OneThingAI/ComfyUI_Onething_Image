@@ -26,7 +26,7 @@ class OneThingAILoader:
     
     RETURN_TYPES = ("IMAGE", )
     FUNCTION = "generate"
-    CATEGORY = "image generation"
+    CATEGORY = "OneThingAI/image generation"
 
     def generate(self, api_key, prompt, model="gpt4o", num_images=1, width=1024, height=1024, retries=3, timeout=8):
         # API endpoint
