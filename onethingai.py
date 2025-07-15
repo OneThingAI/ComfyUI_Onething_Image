@@ -22,13 +22,17 @@ class OneThingAILoader:
                 "retries": ("INT", {"default": 3, "min": 0, "max": 5}),
                 "timeout": ("INT", {"default": 20, "min": 5, "max": 100}),
             },
+            "optional": {
+                "reference_image": ("IMAGE",),
+                "reference_image_weight": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05}),
+            }
         }
     
     RETURN_TYPES = ("IMAGE", )
     FUNCTION = "generate"
     CATEGORY = "OneThingAI/image generation"
 
-    def generate(self, api_key, prompt, model="gpt4o", num_images=1, width=1024, height=1024, retries=3, timeout=8):
+    def generate(self, api_key, prompt, model="gpt4o", num_images=1, width=1024, height=1024, retries=3, timeout=8, reference_image=None, reference_image_weight=0.5):
         # API endpoint
         url = "https://api-model.onethingai.com/v1/images/generations"
         
@@ -57,6 +61,28 @@ class OneThingAILoader:
             "n": num_images,
             "size": f"{width}x{height}",
         }
+
+        # Add reference image if provided
+        if reference_image is not None:
+            # Convert the first image if it's a batch
+            if len(reference_image.shape) == 4:
+                image_to_encode = reference_image[0]
+            else:
+                image_to_encode = reference_image
+
+            # Convert from torch tensor to PIL Image
+            image_to_encode = (image_to_encode.cpu().numpy() * 255).astype(np.uint8)
+            if len(image_to_encode.shape) == 3:
+                image_to_encode = Image.fromarray(image_to_encode)
+            
+            # Convert to base64
+            buffered = io.BytesIO()
+            image_to_encode.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode()
+            
+            # Add to payload
+            payload["reference_image"] = img_str
+            payload["reference_image_weight"] = reference_image_weight
             
         try:
             # Make API request with timeout

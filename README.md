@@ -8,6 +8,7 @@ A custom node for ComfyUI that integrates with OneThing AI's image generation AP
 - Multiple images per request (1-10)
 - Built-in retry mechanism for API stability
 - Configurable timeout settings
+- Reference image support for guided image generation
 
 ## Installation
 
@@ -34,6 +35,8 @@ pip install Pillow requests
    - Width/Height: Image dimensions (512-2048, step 64)
    - Retries: Number of retry attempts (0-5)
    - Timeout: Request timeout in seconds (5-100)
+   - Reference Image (optional): Input image to guide the generation
+   - Reference Image Weight (optional): Control how much the reference image influences the result (0.0-1.0)
 
 ## Requirements
 - Python 3.x
