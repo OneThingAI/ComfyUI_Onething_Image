@@ -19,8 +19,8 @@ class OneThingAILoader:
                 "num_images": ("INT", {"default": 1, "min": 1, "max": 10}),
                 "width": ("INT", {"default": 1024, "min": 512, "max": 2048, "step": 64}),
                 "height": ("INT", {"default": 1024, "min": 512, "max": 2048, "step": 64}),
-                "retries": ("INT", {"default": 3, "min": 0, "max": 5}),
-                "timeout": ("INT", {"default": 20, "min": 5, "max": 100}),
+                "retries": ("INT", {"default": 3, "min": 1, "max": 10}),
+                "timeout": ("INT", {"default": 120, "min": 5, "max": 180}),
             },
             "optional": {
                 "reference_image": ("IMAGE",),
