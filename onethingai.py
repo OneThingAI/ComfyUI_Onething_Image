@@ -15,7 +15,7 @@ class OneThingAILoader:
             "required": {
                 "api_key": ("STRING", {"default": "", "multiline": False}),
                 "prompt": ("STRING", {"default": "", "multiline": True}),
-                "model": ("STRING", {"default": "gpt4o"}),
+                "model": ("STRING", {"default": "gpt-image-1"}),
                 "num_images": ("INT", {"default": 1, "min": 1, "max": 10}),
                 "width": ("INT", {"default": 1024, "min": 512, "max": 2048, "step": 64}),
                 "height": ("INT", {"default": 1024, "min": 512, "max": 2048, "step": 64}),
