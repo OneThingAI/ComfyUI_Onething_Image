@@ -20,6 +20,7 @@ class OneThingAILoader:
                 "image_size": (["1536x1024", "1024x1024", "1024x1536", "自定义"], {"default": "1024x1024"}),
                 "custom_width": ("INT", {"default": 1024, "min": 512, "max": 2048, "step": 64}),
                 "custom_height": ("INT", {"default": 1024, "min": 512, "max": 2048, "step": 64}),
+                "quality": (["low", "medium", "high"], {"default": "medium"}),
                 "retries": ("INT", {"default": 3, "min": 1, "max": 10}),
                 "timeout": ("INT", {"default": 120, "min": 5, "max": 180}),
             },
@@ -33,7 +34,7 @@ class OneThingAILoader:
     FUNCTION = "generate"
     CATEGORY = "OneThingAI/image generation"
 
-    def generate(self, api_key, prompt, model="gpt-image-1", num_images=1, image_size="1024x1024", custom_width=1024, custom_height=1024, retries=3, timeout=8, reference_image=None, reference_image_weight=0.5):
+    def generate(self, api_key, prompt, model="gpt-image-1", num_images=1, image_size="1024x1024", custom_width=1024, custom_height=1024, quality="medium", retries=3, timeout=8, reference_image=None, reference_image_weight=0.5):
         # API endpoint
         url = "https://api-model.onethingai.com/v1/images/generations"
         
@@ -64,7 +65,8 @@ class OneThingAILoader:
             "model": model,
             "prompt": prompt,
             "n": num_images,
-            "size": size,
+            "size": image_size,
+            "quality": quality,
         }
 
         # Add reference image if provided
