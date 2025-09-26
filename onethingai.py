@@ -53,7 +53,8 @@ class OneThingAILoader:
         # Request headers
         headers = {
             "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "User-Agent": "OneThingAI ComfyUI/1.0"
         }
         
         # Determine image size based on selection
@@ -143,13 +144,3 @@ class OneThingAILoader:
             raise RuntimeError(f"Error generating images: {str(e)}")
         finally:
             session.close()
-
-# Register the node class
-NODE_CLASS_MAPPINGS = {
-    "OneThingAILoader": OneThingAILoader
-}
-
-# Add descriptions
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "OneThingAILoader": "OneThingAI Image Generator"
-} 

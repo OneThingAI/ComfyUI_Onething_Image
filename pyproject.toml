@@ -1,0 +1,13 @@
+[project]
+name = "comfyui_onething_image"
+description = "A custom node for ComfyUI that integrates with OneThing AI's image generation API."
+version = "1.0.0"
+
+[project.urls]
+Repository = "https://github.com/OneThingAI/ComfyUI_Onething_Image"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "OneThingAI"
+DisplayName = "ComfyUI_OneThingAI_ImageNode"
+Icon = ""
