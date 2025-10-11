@@ -37,6 +37,10 @@ class BaseImageNode:
     RETURN_TYPES = ("IMAGE",)
 
     @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        return float("NaN")
+
+    @classmethod
     def INPUT_TYPES(cls):
         cls.BASE_INPUT["required"]["model"] = (cls.SUPPORTED_MODELS, {})
         return {
@@ -72,6 +76,7 @@ class BaseImageNode:
         # write buffer
         buffered = io.BytesIO()
         image_to_encode.save(buffered, format="PNG")
+        buffered.seek(0)
         return buffered
 
     @staticmethod
@@ -87,7 +92,7 @@ class BaseImageNode:
         # Process images
         if len(result["data"]) == 0:
             raise ValueError("no image result")
-        if "b64_json" not in result["data"][0]:
+        if "b64_json" not in result["data"][0] or not result["data"][0]["b64_json"]:
             raise ValueError("no b64 json in result")
         image_bytes = base64.b64decode(result["data"][0]["b64_json"])
         image = Image.open(io.BytesIO(image_bytes))
@@ -117,6 +122,23 @@ class BaseImageNode:
             "size": image_size
         }
 
+        # filter
+        input_types = self.INPUT_TYPES()
+        for key, settings in input_types["required"].items():
+            if len(settings) > 1 and "enabled" in settings[1] and model not in settings[1]["enabled"]:
+                    if key in kwargs:
+                        del kwargs[key]
+                        print(f"filtered input: {key} at models: {model}")
+        for key, settings in input_types["optional"].items():
+            if len(settings) > 1 and "enabled" in settings[1] and model not in settings[1]["enabled"]:
+                if key == "reference_image":
+                    reference_image = None
+                    print("reference_image off")
+                    continue
+                if key in kwargs:
+                    del kwargs[key]
+                    print(f"filtered input: {key} at models: {model}")
+
         extra_params = {}
 
         if extra:
@@ -125,7 +147,12 @@ class BaseImageNode:
             except json.decoder.JSONDecodeError:
                 raise ValueError("extra not a json string")
 
+        payload, timeout, extra_params, reference_image, kwargs = self.post_input(payload, timeout, extra_params, reference_image, **kwargs)
+
         return self.generate(client, headers, payload, timeout, extra_params, reference_image, **kwargs)
+
+    def post_input(self, payload: dict, timeout: int, extra_params: dict, reference_image=None, **kwargs) -> tuple[dict, int, dict, list, dict]:
+        return payload, timeout, extra_params, reference_image, kwargs
 
     def generate(self, client: requests.Session, headers: dict[str, str], payload: dict, timeout: int,
                  extra_params: dict, reference_image=None, **kwargs):
@@ -138,6 +165,7 @@ class OpenAICompatibleNode(BaseImageNode):
     def generate(self, client, headers, payload, timeout, extra_params, reference_image=None, **kwargs):
         payload.update(kwargs)
         payload.update(extra_params)
+        payload["n"] = 1
         try:
             if reference_image is None:
                 # generate mode, use json api
@@ -146,7 +174,8 @@ class OpenAICompatibleNode(BaseImageNode):
                     self.URL_GENERATIONS,
                     headers=headers,
                     json=payload,
-                    timeout=timeout
+                    timeout=timeout,
+                    verify=False
                 )
                 return self.read_image_result(response)
 
@@ -154,7 +183,7 @@ class OpenAICompatibleNode(BaseImageNode):
                 # edit mode, use form api
                 # headers["Content-Type"] = "multipart/form-data"
                 img = self.read_reference_image(reference_image)
-                files = {"image[]": img}
+                files = {"image": img}
                 response = client.post(
                     self.URL_EDIT,
                     headers=headers,
