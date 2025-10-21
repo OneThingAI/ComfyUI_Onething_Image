@@ -59,7 +59,7 @@ class SeedreamImage(VolcengineNode):
         },
         "optional": {
             "reference_image": ("IMAGE", {"enabled": ["doubao-seedream-4-0-250828", "doubao-seededit-3-0-i2i-250628"]}),
-            "guidance_scale": ("FLOAT", {"min": 1, "max": 10, "enabled": ["doubao-seedream-3-0-t2i-250415", "doubao-seededit-3-0-i2i-250628"]})
+            "guidance_scale": ("FLOAT", {"default":0, "min": 0, "max": 10, "enabled": ["doubao-seedream-3-0-t2i-250415", "doubao-seededit-3-0-i2i-250628"]})
         }
     }
 
@@ -68,4 +68,8 @@ class SeedreamImage(VolcengineNode):
             payload["size"] = "adaptive"
             if reference_image is None:
                 raise ValueError("doubao-seededit-3-0-i2i-250628需要参数：reference_image")
+        print("kwargs:", kwargs)
+        if "guidance_scale" in kwargs and kwargs["guidance_scale"] < 1.0:
+            del kwargs["guidance_scale"]
+        print("kwargs(updated):", kwargs)
         return payload, timeout, extra_params, reference_image, kwargs

@@ -86,7 +86,7 @@ class BaseImageNode:
         # Parse response
         result = response.json()
 
-        if "data" not in result:
+        if "data" not in result or result["data"] is None:
             raise ValueError(f"Unexpected API response: {result}")
 
         # Process images
