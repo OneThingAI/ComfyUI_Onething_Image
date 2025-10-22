@@ -9,10 +9,11 @@ class WanxiangImage(OpenAICompatibleNode):
         "wanx2.1-t2i-plus",
         "wanx2.1-t2i-turbo",
         "wanx2.0-t2i-turbo",
+        "wan2.5-image-preview"
     ]
     EXTEND_INPUT = {
         "optional": {
-            "reference_image": ("IMAGE", {"enabled": []})
+            "reference_image": ("IMAGE", {"enabled": ["wan2.5-image-preview"]})
         }
     }
 
