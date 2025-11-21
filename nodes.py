@@ -2,7 +2,10 @@ from .base import OpenAICompatibleNode, VolcengineNode
 
 
 class GeminiImage(OpenAICompatibleNode):
-    SUPPORTED_MODELS = ["gemini-2.5-flash-image"]
+    SUPPORTED_MODELS = [
+        "gemini-2.5-flash-image",
+        "gemini-3-pro-image"
+    ]
 
 class WanxiangImage(OpenAICompatibleNode):
     SUPPORTED_MODELS = [
