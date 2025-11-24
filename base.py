@@ -28,10 +28,11 @@ class BaseImageNode:
         }
     }
     EXTEND_INPUT = {}  # replace it with your own input to extend
-    SUPPORTED_MODELS = [] # replace it with your own supported moldes
+    SUPPORTED_MODELS = []  # replace it with your own supported moldes
+    DELETED_INPUT = []  # replace it with your own deleted input
     CATEGORY = "OneThingAI/image generation"
     FUNCTION = "pre_input"
-    UA = "OneThingAI ComfyUI/1.0"
+    UA = "OneThingAI ComfyUI/1.1"
     URL_GENERATIONS = "https://api-model.onethingai.com/v1/images/generations"
     URL_EDIT = "https://api-model.onethingai.com/v1/images/edits"
     RETURN_TYPES = ("IMAGE",)
@@ -43,9 +44,11 @@ class BaseImageNode:
     @classmethod
     def INPUT_TYPES(cls):
         cls.BASE_INPUT["required"]["model"] = (cls.SUPPORTED_MODELS, {})
+        required = {**cls.BASE_INPUT.get("required", {}), **cls.EXTEND_INPUT.get("required", {})}
+        optional = {**cls.BASE_INPUT.get("optional", {}), **cls.EXTEND_INPUT.get("optional", {})}
         return {
-            "required": {**cls.BASE_INPUT.get("required", {}), **cls.EXTEND_INPUT.get("required", {})},
-            "optional": {**cls.BASE_INPUT.get("optional", {}), **cls.EXTEND_INPUT.get("optional", {})}
+            "required": {k: v for k, v in required.items() if k not in cls.DELETED_INPUT},
+            "optional": {k: v for k, v in optional.items() if k not in cls.DELETED_INPUT}
         }
 
     @staticmethod
@@ -64,19 +67,23 @@ class BaseImageNode:
     def read_reference_image(image):
         # Convert the first image if it's a batch
         if len(image.shape) == 4:
-            image_to_encode = image[0]
+            image_to_encode = [img for img in image]
         else:
-            image_to_encode = image
+            image_to_encode = [image]
 
-        # Convert from torch tensor to PIL Image
-        image_to_encode = (image_to_encode.cpu().numpy() * 255).astype(np.uint8)
-        if len(image_to_encode.shape) == 3:
-            image_to_encode = Image.fromarray(image_to_encode)
+        buffered = []
+        for img in image_to_encode:
+            # Convert from torch tensor to PIL Image
+            img = (img.cpu().numpy() * 255).astype(np.uint8)
+            if len(img.shape) == 3:
+                img = Image.fromarray(img)
 
-        # write buffer
-        buffered = io.BytesIO()
-        image_to_encode.save(buffered, format="PNG")
-        buffered.seek(0)
+            # write buffer
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            buf.seek(0)
+            buffered.append(buf)
+        print("buffered:", buffered)
         return buffered
 
     @staticmethod
@@ -105,11 +112,8 @@ class BaseImageNode:
         final_image = final_image.unsqueeze(0)
         return (final_image,)
 
-    def pre_input(self, api_key, model, prompt, image_size, custom_width, custom_height, retries, timeout,
-                  reference_image=None, extra=None, **kwargs):
+    def pre_input(self, api_key, model, prompt, retries, timeout, reference_image=None, extra=None, **kwargs):
         client = self.new_http_client(retries)
-        if image_size == "自定义":
-            image_size = f"{custom_width}x{custom_height}"
 
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -119,25 +123,30 @@ class BaseImageNode:
         payload = {
             "model": model,
             "prompt": prompt,
-            "size": image_size
         }
+
+        if "image_size" in kwargs:
+            if kwargs["image_size"] == "自定义":
+                payload["size"] = f"{kwargs['custom_width']}x{kwargs['custom_height']}"
+            else:
+                payload["size"] = kwargs["image_size"]
 
         # filter
         input_types = self.INPUT_TYPES()
         for key, settings in input_types["required"].items():
             if len(settings) > 1 and "enabled" in settings[1] and model not in settings[1]["enabled"]:
-                    if key in kwargs:
-                        del kwargs[key]
-                        print(f"filtered input: {key} at models: {model}")
+                if key in kwargs:
+                    del kwargs[key]
+                    # print(f"filtered input: {key} at models: {model}")
         for key, settings in input_types["optional"].items():
             if len(settings) > 1 and "enabled" in settings[1] and model not in settings[1]["enabled"]:
                 if key == "reference_image":
                     reference_image = None
-                    print("reference_image off")
+                    # print("reference_image off")
                     continue
                 if key in kwargs:
                     del kwargs[key]
-                    print(f"filtered input: {key} at models: {model}")
+                    # print(f"filtered input: {key} at models: {model}")
 
         extra_params = {}
 
@@ -147,11 +156,13 @@ class BaseImageNode:
             except json.decoder.JSONDecodeError:
                 raise ValueError("extra not a json string")
 
-        payload, timeout, extra_params, reference_image, kwargs = self.post_input(payload, timeout, extra_params, reference_image, **kwargs)
+        payload, timeout, extra_params, reference_image, kwargs = self.post_input(payload, timeout, extra_params,
+                                                                                  reference_image, **kwargs)
 
         return self.generate(client, headers, payload, timeout, extra_params, reference_image, **kwargs)
 
-    def post_input(self, payload: dict, timeout: int, extra_params: dict, reference_image=None, **kwargs) -> tuple[dict, int, dict, list, dict]:
+    def post_input(self, payload: dict, timeout: int, extra_params: dict, reference_image=None, **kwargs) -> tuple[
+        dict, int, dict, list, dict]:
         return payload, timeout, extra_params, reference_image, kwargs
 
     def generate(self, client: requests.Session, headers: dict[str, str], payload: dict, timeout: int,
@@ -183,7 +194,10 @@ class OpenAICompatibleNode(BaseImageNode):
                 # edit mode, use form api
                 # headers["Content-Type"] = "multipart/form-data"
                 img = self.read_reference_image(reference_image)
-                files = {"image": img}
+                if len(img) == 1:
+                    files = {"image": img[0]}
+                else:
+                    files = [("image[]", i) for i in img]
                 response = client.post(
                     self.URL_EDIT,
                     headers=headers,
@@ -211,7 +225,10 @@ class VolcengineNode(BaseImageNode):
         headers["Content-Type"] = "application/json"
         if reference_image is not None:
             img = self.read_reference_image(reference_image)
-            payload["image"] = "data:image/png;base64," + base64.b64encode(img.getvalue()).decode()
+            if len(img) == 1:
+                payload["image"] = "data:image/png;base64," + base64.b64encode(img[0].getvalue()).decode()
+            else:
+                payload["image"] = ["data:image/png;base64,"+base64.b64encode(b64_img.getvalue()).decode() for b64_img in img]
         try:
             response = client.post(
                 self.URL_GENERATIONS,
