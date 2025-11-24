@@ -4,6 +4,8 @@ from .base import OpenAICompatibleNode, VolcengineNode
 class GeminiImage(OpenAICompatibleNode):
     SUPPORTED_MODELS = [
         "gemini-3-pro-image",
+        "gemini-3-pro-image-2k"
+        "gemini-3-pro-image-4k",
         "gemini-2.5-flash-image",
     ]
     DELETED_INPUT = [
