@@ -1,6 +1,8 @@
 import base64
 import io
 import json
+import random
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -130,6 +132,10 @@ class BaseImageNode:
                 payload["size"] = f"{kwargs['custom_width']}x{kwargs['custom_height']}"
             else:
                 payload["size"] = kwargs["image_size"]
+
+        if "seed" in kwargs:
+            if kwargs["seed"] == -1:
+                kwargs["seed"] = random.randint(1, 2147483647)
 
         # filter
         input_types = self.INPUT_TYPES()
