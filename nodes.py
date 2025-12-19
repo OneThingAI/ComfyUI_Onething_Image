@@ -77,6 +77,7 @@ class OpenAIImage(OpenAICompatibleNode):
 
 class SeedreamImage(VolcengineNode):
     SUPPORTED_MODELS = [
+        "doubao-seedream-4-5-251128",
         "doubao-seedream-4-0-250828",
         "doubao-seedream-3-0-t2i-250415",
         "doubao-seededit-3-0-i2i-250628"
@@ -100,6 +101,19 @@ class SeedreamImage(VolcengineNode):
             payload["size"] = "adaptive"
             if reference_image is None:
                 raise ValueError("doubao-seededit-3-0-i2i-250628需要参数：reference_image")
+        if payload["model"] == "doubao-seedream-4-5-251128":
+            if "size" in payload and payload["size"] != "adaptive":
+                try:
+                    width, height = map(int, payload["size"].split("x"))
+                    total_pixels = width * height
+                    if total_pixels < 3686400:
+                        raise ValueError("doubao-seedream-4-5-251128分辨率过低：仅支持2k,4k分辨率")
+                    elif total_pixels > 16777216:
+                        raise ValueError("doubao-seedream-4-5-251128分辨率过高：仅支持2k,4k分辨率")
+                except (ValueError, AttributeError) as e:
+                    if isinstance(e, ValueError) and ("过低" in str(e) or "过高" in str(e)):
+                        raise
+                    raise ValueError(f"doubao-seedream-4-5-251128无法解析size格式: {payload.get('size')}")
         if "guidance_scale" in kwargs and kwargs["guidance_scale"] < 1.0:
             del kwargs["guidance_scale"]
         return payload, timeout, extra_params, reference_image, kwargs
