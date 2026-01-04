@@ -89,7 +89,7 @@ class SeedreamImage(VolcengineNode):
             "watermark": ("BOOLEAN", {"default": True}),
         },
         "optional": {
-            "reference_image": ("IMAGE", {"enabled": ["doubao-seedream-4-0-250828", "doubao-seededit-3-0-i2i-250628"]}),
+            "reference_image": ("IMAGE", {"enabled": ["doubao-seedream-4-5-251128", "doubao-seedream-4-0-250828", "doubao-seededit-3-0-i2i-250628"]}),
             "guidance_scale": ("FLOAT", {"default": 0, "min": 0, "max": 10,
                                          "enabled": ["doubao-seedream-3-0-t2i-250415",
                                                      "doubao-seededit-3-0-i2i-250628"]})
