@@ -3,6 +3,9 @@ from .base import OpenAICompatibleNode, VolcengineNode
 
 class GeminiImage(OpenAICompatibleNode):
     SUPPORTED_MODELS = [
+        "gemini-3.1-flash-image",
+        "gemini-3.1-flash-image-2k",
+        "gemini-3.1-flash-image-4k",
         "gemini-3-pro-image",
         "gemini-3-pro-image-2k",
         "gemini-3-pro-image-4k",
@@ -15,10 +18,16 @@ class GeminiImage(OpenAICompatibleNode):
     ]
     EXTEND_INPUT = {
         "required": {
-            "aspect_ratio": (["默认","1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
+            "aspect_ratio": (["默认", "1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"],
                              {"default": "默认"}),
             "seed": ("INT", {"default": "-1", "min": -1, "max": 2147483647,
-                             "enabled": ["gemini-3-pro-image"]}),
+                             "enabled": ["gemini-3-pro-image",
+                                         "gemini-3-pro-image-2k",
+                                         "gemini-3-pro-image-4k",
+                                         "gemini-3.1-flash-image",
+                                         "gemini-3.1-flash-image-2k",
+                                         "gemini-3.1-flash-image-4k"
+                                         ]}),
         }
     }
 
@@ -89,7 +98,8 @@ class SeedreamImage(VolcengineNode):
             "watermark": ("BOOLEAN", {"default": True}),
         },
         "optional": {
-            "reference_image": ("IMAGE", {"enabled": ["doubao-seedream-4-5-251128", "doubao-seedream-4-0-250828", "doubao-seededit-3-0-i2i-250628"]}),
+            "reference_image": ("IMAGE", {"enabled": ["doubao-seedream-4-5-251128", "doubao-seedream-4-0-250828",
+                                                      "doubao-seededit-3-0-i2i-250628"]}),
             "guidance_scale": ("FLOAT", {"default": 0, "min": 0, "max": 10,
                                          "enabled": ["doubao-seedream-3-0-t2i-250415",
                                                      "doubao-seededit-3-0-i2i-250628"]})
